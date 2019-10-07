@@ -27,6 +27,7 @@ hs_err_pid*
 .idea/vcs.xml
 log/
 etc/
+out/
 boapartyrepo.xml
 boarepository.xml
 domainrepository.xml
