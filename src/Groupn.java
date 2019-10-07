@@ -13,7 +13,7 @@ import genius.core.parties.NegotiationInfo;
 /**
  * This is your negotiation party.
  */
-public class Groupn extends AbstractNegotiationParty {
+public class Group11 extends AbstractNegotiationParty {
 
     private Bid lastReceivedBid = null;
 
