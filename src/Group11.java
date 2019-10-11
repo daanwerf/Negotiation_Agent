@@ -1,5 +1,3 @@
-package multipartyexample;
-
 import java.util.List;
 
 import genius.core.AgentID;
@@ -52,7 +50,7 @@ public class Group11 extends AbstractNegotiationParty {
 
     @Override
     public String getDescription() {
-        return "example party group N";
+        return "example party group 11";
     }
 
 }
