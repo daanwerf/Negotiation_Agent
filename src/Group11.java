@@ -50,7 +50,7 @@ public class Group11 extends AbstractNegotiationParty {
 
     @Override
     public String getDescription() {
-        return "example party group 11";
+        return "example party group N";
     }
 
 }
