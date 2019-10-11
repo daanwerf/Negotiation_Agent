@@ -21,12 +21,13 @@ public class myAccept extends AcceptanceStrategy {
 
     public Actions determineAcceptability() {
 
-        double utilAccept = 0.9;
+        double utilAccept = 0.95;
+        double base = 100;
 
         double time = negotiationSession.getTime();
         double opponentBid = negotiationSession.getOpponentBidHistory().getLastBidDetails().getMyUndiscountedUtil();
 
-        if (opponentBid > utilAccept * (Math.pow(-2, time) + 2)){
+        if (opponentBid > utilAccept * (Math.pow(-base, time) + base) / base){
             return Actions.Accept;
         }
         return Actions.Reject;
