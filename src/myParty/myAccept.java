@@ -15,11 +15,20 @@ public class myAccept extends AcceptanceStrategy {
     }
 
     public void init(NegotiationSession negoSession, OfferingStrategy strat, OpponentModel opponentModel, Map<String, Double> parameters) throws Exception {
-
+        this.negotiationSession = negoSession;
+        this.offeringStrategy = strat;
     }
 
     public Actions determineAcceptability() {
-        return Actions.Accept;
+
+        double utilAccept = 0.9;
+        double opponentBid = negotiationSession.getOpponentBidHistory().getLastBidDetails().getMyUndiscountedUtil();
+
+        if (opponentBid > utilAccept){
+            return Actions.Accept;
+        }
+        return Actions.Reject;
+
     }
 
     public String getName() {
