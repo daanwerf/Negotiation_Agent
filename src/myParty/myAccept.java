@@ -14,7 +14,7 @@ public class myAccept extends AcceptanceStrategy {
     public myAccept() {
     }
 
-    public void init(NegotiationSession negoSession, OfferingStrategy strat, OpponentModel opponentModel, Map<String, Double> parameters) throws Exception {
+    public void init(NegotiationSession negoSession, OfferingStrategy strat, OpponentModel opponentModel, Map<String, Double> parameters) {
         this.negotiationSession = negoSession;
         this.offeringStrategy = strat;
     }
@@ -22,9 +22,11 @@ public class myAccept extends AcceptanceStrategy {
     public Actions determineAcceptability() {
 
         double utilAccept = 0.9;
+
+        double time = negotiationSession.getTime();
         double opponentBid = negotiationSession.getOpponentBidHistory().getLastBidDetails().getMyUndiscountedUtil();
 
-        if (opponentBid > utilAccept){
+        if (opponentBid > utilAccept * (Math.pow(-2, time) + 2)){
             return Actions.Accept;
         }
         return Actions.Reject;
