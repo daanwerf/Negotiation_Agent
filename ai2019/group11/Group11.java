@@ -28,8 +28,11 @@ public class Group11 extends AbstractNegotiationParty {
     private Bid previousLastReceivedBid;
     private int issuesAmount;
     private double totalNegotiationTime;
-    private double counter_offer_concede_factor;
+    private double initialCounterOfferConcedeFactor;
+    private double upperCounterOfferConcedeFactor;
+    private double counterOfferConcedeTimeRate;
     private double epsilon;
+    private double opponentConcessionRate;
     private int weightLearnFactor;
     private int ownImportance;
     private int opponentImportance;
@@ -51,12 +54,18 @@ public class Group11 extends AbstractNegotiationParty {
         this.issuesAmount = this.opponentUtilitySpace.getDomain().getIssues().size();
         this.totalNegotiationTime = info.getTimeline().getTotalTime();
         // This is a Number between 0 and 1. A higher value will result in more concession towards the opponent
-        this.counter_offer_concede_factor = 0.35;
+        this.initialCounterOfferConcedeFactor = 0.2;
+        // This is a number between 0 and 1. This number is the rate at which the concede factor becomes more lenient
+        this.counterOfferConcedeTimeRate = 0.02;
+        // This is a number between 0 and 1. This number is the rate at which the concede factor becomes more lenient
+        this.upperCounterOfferConcedeFactor = 0.8;
         // The weight factor for our own utility
         this.ownImportance = 5;
+        // Concession rate of the opponent, updated every time using his last and previous last bids
+        this.opponentConcessionRate = 0.5;
         // The weight factor for the opponents utility
         this.opponentImportance = 3;
-        // This is a Number between 0 and 1. This number is used to increase the learning speed used to model the opponent
+        // This is a number between 0 and 1. This number is used to increase the learning speed used to model the opponent
         this.epsilon = 0.2;
         // This number is used to increase the weights of the opponent model of issues found in successive bids of the opponent
         this.weightLearnFactor = 1;
@@ -101,17 +110,18 @@ public class Group11 extends AbstractNegotiationParty {
      * @return The best possible offer, according to our agent
      */
     private Bid determineNextBid() {
+        double currentTime = this.getTimeLine().getTime();
         updateOpponentModel();
 
         IssueRanking ir = new IssueRanking(utilitySpace);
         int importance_upper_bound = (int) Math.round((utilitySpace.getDomain().getIssues().size() - 1) *
-                counter_offer_concede_factor);
+                initialCounterOfferConcedeFactor);
         System.out.println("Importance upper bound: " + importance_upper_bound);
 
-        // TODO: make combinations between conceding a bit and opting for a random value. Also add points where we increase our own utility.
         ArrayList<Bid> bidList = new ArrayList<>();
         Bid current_bid_favoring_opponent = lastOfferedBid;
         Bid current_bid_with_randomness = lastOfferedBid;
+        Bid current_bid_mixed = lastOfferedBid;
 
         // Go over every issue and change the values that are different from the opponent.
         for (Issue issue : utilitySpace.getDomain().getIssues()) {
@@ -123,10 +133,20 @@ public class Group11 extends AbstractNegotiationParty {
             try {
                 Value ranValue = getRandomValue(issue);
 
-                // TODO: iets met getBidNearUtility
                 if (!ownValue.equals(oppValue) && issue_importance <= importance_upper_bound) {
                     current_bid_favoring_opponent = current_bid_favoring_opponent.putValue(issueName, oppValue);
                     current_bid_with_randomness = current_bid_with_randomness.putValue(issueName, ranValue);
+
+                    // TODO: Give this 0.5 a name
+                    if (new Random().nextDouble() > 0.5) {
+                        current_bid_mixed = current_bid_mixed.putValue(issueName, oppValue);
+                    } else {
+                        current_bid_mixed = current_bid_mixed.putValue(issueName, ranValue);
+                    }
+                    bidList.add(current_bid_favoring_opponent);
+                    bidList.add(current_bid_with_randomness);
+                    bidList.add(current_bid_mixed);
+
                     System.out.println("Conceded a bit on issue: " + issue.getName());
                 }
             } catch (Exception e) {
@@ -134,9 +154,7 @@ public class Group11 extends AbstractNegotiationParty {
             }
         }
 
-        bidList.add(current_bid_favoring_opponent);
-        bidList.add(current_bid_with_randomness);
-
+        updateCounterOfferConcedeFactor(currentTime);
         return selectBestBid(bidList);
     }
 
@@ -149,6 +167,7 @@ public class Group11 extends AbstractNegotiationParty {
         double ownLastUtility = utilitySpace.getUtility(lastOfferedBid);
         double oppLastUtility = opponentUtilitySpace.getUtility(lastReceivedBid);
         double combinedUtility = (ownImportance * ownLastUtility + opponentImportance * oppLastUtility) / (ownImportance + opponentImportance);
+        System.out.println("Size of BidList: " + bidList.size());
         System.out.println("Last bid: " + lastOfferedBid);
         System.out.println("ownLastUtility: " + ownLastUtility + ", " + "oppLastUtility: " + oppLastUtility + ", " + "combinedUtility: " + combinedUtility);
 
@@ -162,7 +181,7 @@ public class Group11 extends AbstractNegotiationParty {
             System.out.println("Current bid: " + b);
             System.out.println("currentBidOwnUtility: " + currentBidOwnUtility + ", " + "currentBidOppUtility: " + currentBidOppUtility + ", " + "currentCombinedUtility: " + currentCombinedUtility);
 
-            // TODO: make this dependent on more factors
+            // Choose the bid with the highest combined utility, where the agent still beats the opponent
             if (currentCombinedUtility >= maxCombinedUtility) {
                 maxCombinedUtility = currentCombinedUtility;
                 bestBid = b;
@@ -229,6 +248,18 @@ public class Group11 extends AbstractNegotiationParty {
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
+        }
+    }
+
+    /**
+     * Increase the leniency towards the opponent as the game progresses. This is halted by the condedeTimeRate
+     * @param currentTime the current time of the negotiation
+     */
+    private void updateCounterOfferConcedeFactor(double currentTime) {
+        double increase = (currentTime * counterOfferConcedeTimeRate);
+        if (this.initialCounterOfferConcedeFactor + increase <= upperCounterOfferConcedeFactor) {
+            this.initialCounterOfferConcedeFactor += increase;
+            System.out.println("Increased concede factor by: " + increase + ". Value is now: " + initialCounterOfferConcedeFactor);
         }
     }
 
