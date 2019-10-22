@@ -31,6 +31,8 @@ public class Group11 extends AbstractNegotiationParty {
     private double counter_offer_concede_factor;
     private double epsilon;
     private int weightLearnFactor;
+    private int ownImportance;
+    private int opponentImportance;
 
     @Override
     public void init(NegotiationInfo info) {
@@ -49,7 +51,11 @@ public class Group11 extends AbstractNegotiationParty {
         this.issuesAmount = this.opponentUtilitySpace.getDomain().getIssues().size();
         this.totalNegotiationTime = info.getTimeline().getTotalTime();
         // This is a Number between 0 and 1. A higher value will result in more concession towards the opponent
-        this.counter_offer_concede_factor = 0.5;
+        this.counter_offer_concede_factor = 0.35;
+        // The weight factor for our own utility
+        this.ownImportance = 5;
+        // The weight factor for the opponents utility
+        this.opponentImportance = 3;
         // This is a Number between 0 and 1. This number is used to increase the learning speed used to model the opponent
         this.epsilon = 0.2;
         // This number is used to increase the weights of the opponent model of issues found in successive bids of the opponent
@@ -83,7 +89,7 @@ public class Group11 extends AbstractNegotiationParty {
         BidDetails lastBid = new BidDetails(lastReceivedBid, time);
         double opponentBid = lastBid.getMyUndiscountedUtil();
 
-        if(opponentBid > utilAccept * (Math.pow(-base, time) + base) / base) {
+        if (opponentBid > utilAccept * (Math.pow(-base, time) + base) / base) {
             return true;
         }
         return false;
@@ -117,6 +123,7 @@ public class Group11 extends AbstractNegotiationParty {
             try {
                 Value ranValue = getRandomValue(issue);
 
+                // TODO: iets met getBidNearUtility
                 if (!ownValue.equals(oppValue) && issue_importance <= importance_upper_bound) {
                     current_bid_favoring_opponent = current_bid_favoring_opponent.putValue(issueName, oppValue);
                     current_bid_with_randomness = current_bid_with_randomness.putValue(issueName, ranValue);
@@ -141,7 +148,7 @@ public class Group11 extends AbstractNegotiationParty {
     private Bid selectBestBid(ArrayList<Bid> bidList) {
         double ownLastUtility = utilitySpace.getUtility(lastOfferedBid);
         double oppLastUtility = opponentUtilitySpace.getUtility(lastReceivedBid);
-        double combinedUtility = ownLastUtility * oppLastUtility;
+        double combinedUtility = (ownImportance * ownLastUtility + opponentImportance * oppLastUtility) / (ownImportance + opponentImportance);
         System.out.println("Last bid: " + lastOfferedBid);
         System.out.println("ownLastUtility: " + ownLastUtility + ", " + "oppLastUtility: " + oppLastUtility + ", " + "combinedUtility: " + combinedUtility);
 
@@ -151,7 +158,7 @@ public class Group11 extends AbstractNegotiationParty {
         for (Bid b : bidList) {
             double currentBidOwnUtility = utilitySpace.getUtility(b);
             double currentBidOppUtility = opponentUtilitySpace.getUtility(b);
-            double currentCombinedUtility = currentBidOwnUtility * currentBidOppUtility;
+            double currentCombinedUtility = (ownImportance * currentBidOwnUtility + opponentImportance * currentBidOppUtility) / (ownImportance + opponentImportance);
             System.out.println("Current bid: " + b);
             System.out.println("currentBidOwnUtility: " + currentBidOwnUtility + ", " + "currentBidOppUtility: " + currentBidOppUtility + ", " + "currentCombinedUtility: " + currentCombinedUtility);
 
