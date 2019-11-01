@@ -31,6 +31,9 @@ public class Group11 extends AbstractNegotiationParty {
     private double initialCounterOfferConcedeFactor;
     private double upperCounterOfferConcedeFactor;
     private double counterOfferConcedeTimeRate;
+    private double initialepsilon;
+    private double recedingRate;
+    private double finalEpsilon;
     private double epsilon;
     private double opponentConcessionRate;
     private int weightLearnFactor;
@@ -65,8 +68,12 @@ public class Group11 extends AbstractNegotiationParty {
         this.opponentConcessionRate = 0.5;
         // The weight factor for the opponents utility
         this.opponentImportance = 3;
-        // This is a number between 0 and 1. This number is used to increase the learning speed used to model the opponent
-        this.epsilon = 0.2;
+        // This is a number between 0 and 1. This value represents the early rate of learning
+        this.initialepsilon = 0.8;
+        // This number represents the rate at which the learning rate of the opponent model recedes
+        this.recedingRate = 10;
+        // This is a number between 0 and 1. This is the lower bound for the learning rate
+        this.finalEpsilon = 0.01;
         // This number is used to increase the weights of the opponent model of issues found in successive bids of the opponent
         this.weightLearnFactor = 1;
     }
@@ -169,7 +176,6 @@ public class Group11 extends AbstractNegotiationParty {
         double combinedUtility = (ownImportance * ownLastUtility + opponentImportance * oppLastUtility) / (ownImportance + opponentImportance);
         System.out.println("Size of BidList: " + bidList.size());
         System.out.println("Last bid: " + lastOfferedBid);
-        System.out.println("ownLastUtility: " + ownLastUtility + ", " + "oppLastUtility: " + oppLastUtility + ", " + "combinedUtility: " + combinedUtility);
 
         Bid bestBid = lastOfferedBid;
         double maxCombinedUtility = combinedUtility;
@@ -178,8 +184,6 @@ public class Group11 extends AbstractNegotiationParty {
             double currentBidOwnUtility = utilitySpace.getUtility(b);
             double currentBidOppUtility = opponentUtilitySpace.getUtility(b);
             double currentCombinedUtility = (ownImportance * currentBidOwnUtility + opponentImportance * currentBidOppUtility) / (ownImportance + opponentImportance);
-            System.out.println("Current bid: " + b);
-            System.out.println("currentBidOwnUtility: " + currentBidOwnUtility + ", " + "currentBidOppUtility: " + currentBidOppUtility + ", " + "currentCombinedUtility: " + currentCombinedUtility);
 
             // Choose the bid with the highest combined utility, where the agent still beats the opponent
             if (currentCombinedUtility >= maxCombinedUtility) {
@@ -205,10 +209,22 @@ public class Group11 extends AbstractNegotiationParty {
         return null;
     }
 
+    private void updateEpsilon() {
+        double currentTime = this.getTimeLine().getTime();
+        double f1 = initialepsilon * (1 - recedingRate * Math.pow(currentTime, 4));
+        double f2 = finalEpsilon;
+
+        System.out.println("Old epsilon: " + epsilon + ". Found at time " + currentTime);
+        this.epsilon = Double.max(f1, f2);
+        System.out.println("New epsilon: " + epsilon + ". Found at time " + currentTime);
+    }
+
+
     /**
      * Update both the weights and the values of the opponent model, based on the algorithm of [12] from the assignment
      */
     private void updateOpponentModel() {
+        updateEpsilon();
         double increaseRate = epsilon / issuesAmount;
 
         if(previousLastReceivedBid == null) {
