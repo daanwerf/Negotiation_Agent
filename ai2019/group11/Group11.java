@@ -1,6 +1,5 @@
 package group11;
 
-import java.util.*;
 
 import genius.core.AgentID;
 import genius.core.Bid;
@@ -12,15 +11,20 @@ import genius.core.issue.*;
 import genius.core.parties.AbstractNegotiationParty;
 import genius.core.parties.NegotiationInfo;
 import genius.core.timeline.TimeLineInfo;
+import genius.core.uncertainty.BidRanking;
+import genius.core.uncertainty.UserModel;
+import genius.core.utility.AbstractUtilitySpace;
 import genius.core.utility.AdditiveUtilitySpace;
 import genius.core.utility.Evaluator;
 import genius.core.utility.EvaluatorDiscrete;
 
+import java.util.*;
 import java.util.Map.Entry;
 
-
+@SuppressWarnings("Duplicates")
 public class Group11 extends AbstractNegotiationParty {
     private TimeLineInfo timelineInfo;
+    private UserModel userModel;
     private AdditiveUtilitySpace utilitySpace;
     private AdditiveUtilitySpace opponentUtilitySpace;
     private Bid lastOfferedBid;
@@ -52,7 +56,15 @@ public class Group11 extends AbstractNegotiationParty {
         this.lastReceivedBid = null;
         this.previousLastReceivedBid = null;
         this.timelineInfo = info.getTimeline();
-        this.utilitySpace = (AdditiveUtilitySpace) info.getUtilitySpace();
+
+        // If there is preference uncertainty, estimate the utility space
+        if (hasPreferenceUncertainty()) {
+            this.utilitySpace = (AdditiveUtilitySpace) estimateUtilitySpace();
+            System.out.println(this.utilitySpace);
+        } else {
+            this.utilitySpace = (AdditiveUtilitySpace) info.getUtilitySpace();
+        }
+
         this.opponentUtilitySpace = (AdditiveUtilitySpace) this.utilitySpace.copy();
         this.issuesAmount = this.opponentUtilitySpace.getDomain().getIssues().size();
         this.totalNegotiationTime = info.getTimeline().getTotalTime();
@@ -76,6 +88,15 @@ public class Group11 extends AbstractNegotiationParty {
         this.finalEpsilon = 0.01;
         // This number is used to increase the weights of the opponent model of issues found in successive bids of the opponent
         this.weightLearnFactor = 1;
+    }
+
+    @Override
+    public AbstractUtilitySpace estimateUtilitySpace() {
+        List<Bid> bidOrder = getUserModel().getBidRanking().getBidOrder();
+
+        EstimatedUtilitySpace e = new EstimatedUtilitySpace(getDomain());
+        //return super.estimateUtilitySpace();
+        return e.getEstimatedUtilitySpace(bidOrder, issuesAmount);
     }
 
     @Override
@@ -123,7 +144,7 @@ public class Group11 extends AbstractNegotiationParty {
         IssueRanking ir = new IssueRanking(utilitySpace);
         int importance_upper_bound = (int) Math.round((utilitySpace.getDomain().getIssues().size() - 1) *
                 initialCounterOfferConcedeFactor);
-        System.out.println("Importance upper bound: " + importance_upper_bound);
+        //System.out.println("Importance upper bound: " + importance_upper_bound);
 
         ArrayList<Bid> bidList = new ArrayList<>();
         Bid current_bid_favoring_opponent = lastOfferedBid;
@@ -154,7 +175,7 @@ public class Group11 extends AbstractNegotiationParty {
                     bidList.add(current_bid_with_randomness);
                     bidList.add(current_bid_mixed);
 
-                    System.out.println("Conceded a bit on issue: " + issue.getName());
+                    //System.out.println("Conceded a bit on issue: " + issue.getName());
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -174,8 +195,8 @@ public class Group11 extends AbstractNegotiationParty {
         double ownLastUtility = utilitySpace.getUtility(lastOfferedBid);
         double oppLastUtility = opponentUtilitySpace.getUtility(lastReceivedBid);
         double combinedUtility = (ownImportance * ownLastUtility + opponentImportance * oppLastUtility) / (ownImportance + opponentImportance);
-        System.out.println("Size of BidList: " + bidList.size());
-        System.out.println("Last bid: " + lastOfferedBid);
+        //System.out.println("Size of BidList: " + bidList.size());
+        //System.out.println("Last bid: " + lastOfferedBid);
 
         Bid bestBid = lastOfferedBid;
         double maxCombinedUtility = combinedUtility;
@@ -191,8 +212,8 @@ public class Group11 extends AbstractNegotiationParty {
                 bestBid = b;
             }
         }
-        System.out.println("Final bid: " + bestBid);
-        System.out.println("-------------------------------------------------");
+        //System.out.println("Final bid: " + bestBid);
+        //System.out.println("-------------------------------------------------");
         return bestBid;
     }
 
@@ -214,9 +235,9 @@ public class Group11 extends AbstractNegotiationParty {
         double f1 = initialepsilon * (1 - recedingRate * Math.pow(currentTime, 4));
         double f2 = finalEpsilon;
 
-        System.out.println("Old epsilon: " + epsilon + ". Found at time " + currentTime);
+        //System.out.println("Old epsilon: " + epsilon + ". Found at time " + currentTime);
         this.epsilon = Double.max(f1, f2);
-        System.out.println("New epsilon: " + epsilon + ". Found at time " + currentTime);
+        //System.out.println("New epsilon: " + epsilon + ". Found at time " + currentTime);
     }
 
 
@@ -275,7 +296,7 @@ public class Group11 extends AbstractNegotiationParty {
         double increase = (currentTime * counterOfferConcedeTimeRate);
         if (this.initialCounterOfferConcedeFactor + increase <= upperCounterOfferConcedeFactor) {
             this.initialCounterOfferConcedeFactor += increase;
-            System.out.println("Increased concede factor by: " + increase + ". Value is now: " + initialCounterOfferConcedeFactor);
+            //System.out.println("Increased concede factor by: " + increase + ". Value is now: " + initialCounterOfferConcedeFactor);
         }
     }
 
