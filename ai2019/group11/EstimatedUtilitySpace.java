@@ -27,11 +27,21 @@ public class EstimatedUtilitySpace {
     private Bid previousBid;
     private Bid currentBid;
 
+    /**
+     * Constructor of the EstimatedUtilitySpace object
+     * @param dom Domain of the utility space to be estimated
+     */
     public EstimatedUtilitySpace(Domain dom) {
         AdditiveUtilitySpaceFactory factory = new AdditiveUtilitySpaceFactory(dom);
         this.resultUtilitySpace = factory.getUtilitySpace();
     }
 
+    /**
+     * Returns the estimated utility space, based on a ranked list of bids and the amount of issues
+     * @param bidOrder Ranked list of bids
+     * @param issuesAmount Amount of issues in domain
+     * @return Estimated utility space
+     */
     public AdditiveUtilitySpace getEstimatedUtilitySpace(List<Bid> bidOrder, int issuesAmount) {
         this.issuesAmount = issuesAmount;
 
@@ -46,6 +56,9 @@ public class EstimatedUtilitySpace {
         return resultUtilitySpace;
     }
 
+    /**
+     * Update the utility space based on the current time and the next bid in the ranked bid list
+     */
     private void updateUtilitySpace() {
         updateEpsilon();
         double increaseRate = userEpsilon / issuesAmount;
@@ -91,6 +104,9 @@ public class EstimatedUtilitySpace {
         }
     }
 
+    /**
+     * Update the learning rate
+     */
     private void updateEpsilon() {
         double f1 = userInitialepsilon * (1 - userRecedingRate * Math.pow(currentTime, 4));
         double f2 = userFinalEpsilon;
@@ -100,6 +116,9 @@ public class EstimatedUtilitySpace {
         //System.out.println("New epsilon: " + userEpsilon + ". Found at time " + currentTime);
     }
 
+    /**
+     * Initialize the utility space, based on the domain
+     */
     private void initializeUtilitySpace() {
         double evenWeightValue = 1.0 / issuesAmount;
 
@@ -116,6 +135,12 @@ public class EstimatedUtilitySpace {
         }
     }
 
+    /**
+     * Use this method to store the changes made between two bids
+     * @param bid1 Previous bid of the bid list
+     * @param bid2 Current bid of the bid list
+     * @return Hashmap detailing differences on each issue of the bids
+     */
     private HashMap<Integer, Integer> userBidChanges(Bid bid1, Bid bid2) {
         HashMap<Integer, Integer> result = new HashMap<>();
         try {
@@ -137,6 +162,11 @@ public class EstimatedUtilitySpace {
         return result;
     }
 
+    /**
+     * Calculate the total number of changes between the opponents last 2 bids
+     * @param opponentBidChanges Hashmap containing changes between the opponents last 2 bids
+     * @return the number of changes
+     */
     private int numberOfChanges(HashMap<Integer, Integer> opponentBidChanges) {
         int numberOfChanges = 0;
         for (Integer issueName : opponentBidChanges.keySet()) {

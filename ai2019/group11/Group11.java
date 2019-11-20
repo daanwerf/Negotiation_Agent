@@ -60,7 +60,7 @@ public class Group11 extends AbstractNegotiationParty {
         // If there is preference uncertainty, estimate the utility space
         if (hasPreferenceUncertainty()) {
             this.utilitySpace = (AdditiveUtilitySpace) estimateUtilitySpace();
-            System.out.println(this.utilitySpace);
+            //System.out.println(this.utilitySpace);
         } else {
             this.utilitySpace = (AdditiveUtilitySpace) info.getUtilitySpace();
         }
@@ -336,9 +336,9 @@ public class Group11 extends AbstractNegotiationParty {
 
     /**
      * Use this method to store the changes made by the opponent between his last 2 bids. Used for the opponent model.
-     * @param bid1
-     * @param bid2
-     * @return
+     * @param bid1 Previous bid of the opponent
+     * @param bid2 Current bid of the opponent
+     * @return Hashmap detailing differences on each issue of the bids
      */
     private HashMap<Integer, Integer> opponentBidChanges(Bid bid1, Bid bid2) {
         HashMap<Integer, Integer> result = new HashMap<>();
