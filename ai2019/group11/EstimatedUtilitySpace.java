@@ -38,7 +38,7 @@ public class EstimatedUtilitySpace {
         this.previousBid = bidOrder.get(bidOrder.size() - 1);
         for (int i = bidOrder.size() - 1; i-- > 0; ) {
             this.currentBid = bidOrder.get(i);
-            System.out.println(currentBid);
+            //System.out.println(currentBid);
             this.currentTime = (double) (bidOrder.size() - i) / bidOrder.size();
             updateUtilitySpace();
             this.previousBid = currentBid;
@@ -74,17 +74,16 @@ public class EstimatedUtilitySpace {
                 resultUtilitySpace.setWeight(currentObjective, newWeight);
             }
 
-            // Update the values, but only the first 30% (best bids, otherwise the bad bids also weigh as much for the values as the good ones)
+            // Update the values
             try {
                 for (Map.Entry<Objective, Evaluator> entry: resultUtilitySpace.getEvaluators()) {
                     EvaluatorDiscrete value = (EvaluatorDiscrete) entry.getValue();
                     IssueDiscrete issue = ((IssueDiscrete) entry.getKey());
 
-                    if (currentTime < 0.3) {
-                        ValueDiscrete issueValue = (ValueDiscrete) currentBid.getValue(issue.getNumber());
-                        Integer notNormalizedEvaluation = value.getEvaluationNotNormalized(issueValue);
-                        value.setEvaluation(issueValue, (userWeightLearnFactor + notNormalizedEvaluation));
-                    }
+                    ValueDiscrete issueValue = (ValueDiscrete) currentBid.getValue(issue.getNumber());
+                    Integer notNormalizedEvaluation = value.getEvaluationNotNormalized(issueValue);
+
+                    value.setEvaluation(issueValue, ((int) (userWeightLearnFactor / currentTime) + notNormalizedEvaluation));
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();
