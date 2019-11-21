@@ -1,0 +1,4 @@
+This is the Genius multilateral tournament runner command line tool
+Currently you are using using Genius 9.1.11
+Input file: multilateraltournament.xml
+Provide path to output logfile [default: logs/Log-XmlRunner-20191024-150918.csv]: 

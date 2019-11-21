@@ -13,10 +13,8 @@ import genius.core.parties.NegotiationInfo;
 import genius.core.timeline.TimeLineInfo;
 import genius.core.uncertainty.BidRanking;
 import genius.core.uncertainty.UserModel;
-import genius.core.utility.AbstractUtilitySpace;
-import genius.core.utility.AdditiveUtilitySpace;
-import genius.core.utility.Evaluator;
-import genius.core.utility.EvaluatorDiscrete;
+import genius.core.utility.*;
+import org.apache.commons.math3.analysis.function.Min;
 
 import java.util.*;
 import java.util.Map.Entry;
@@ -103,6 +101,7 @@ public class Group11 extends AbstractNegotiationParty {
     public Action chooseAction(List<Class<? extends Action>> validActions) {
         if (lastReceivedBid != null && validActions.contains(Accept.class) && determineAcceptability()) {
             return new Accept(getPartyId(), lastReceivedBid);
+
         } else {
             if (lastOfferedBid == null) {
                 lastOfferedBid = determineOpeningBid();
@@ -119,15 +118,33 @@ public class Group11 extends AbstractNegotiationParty {
      * @return true if the offer is accepted, false otherwise
      */
     private boolean determineAcceptability() {
-        double utilAccept = 0.95;
-        double base = 100;
-
+        double utilAccept ;
+        double base = Math.pow(10, 13);
+        double t1 = 0.9;
+        double t2 = 0.98;
+        double InitialAccept = 0.85;
+        double FinalAccept = 0.75;
+        double lastBidOwnUtility = utilitySpace.getUtility(lastReceivedBid);
+        double a = (FinalAccept - InitialAccept)/(t2 - t1);
+        double b = InitialAccept -a * t1;
         double time = this.getTimeLine().getTime();
-        BidDetails lastBid = new BidDetails(lastReceivedBid, time);
+        BidDetails lastBid = new BidDetails(lastReceivedBid, lastBidOwnUtility, time);
         double opponentBid = lastBid.getMyUndiscountedUtil();
 
-        if (opponentBid > utilAccept * (Math.pow(-base, time) + base) / base) {
+      
+        if (time <= t1) {
+            utilAccept = InitialAccept;
+        } else if (time >= t1 && time < t2) {
+            utilAccept = a * time + b;
+        } else {
+            utilAccept = FinalAccept;
+        }
+
+        if (opponentBid>= utilAccept) {
+
+//            System.out.println("Final acceptance = " + FinalAccept);
             return true;
+
         }
         return false;
     }
