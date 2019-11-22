@@ -120,10 +120,10 @@ public class Group11 extends AbstractNegotiationParty {
     private boolean determineAcceptability() {
         double utilAccept ;
         double base = Math.pow(10, 13);
-        double t1 = 0.9;
+        double t1 = 0.93;
         double t2 = 0.98;
         double InitialAccept = 0.85;
-        double FinalAccept = 0.75;
+        double FinalAccept = 0.73;
         double lastBidOwnUtility = utilitySpace.getUtility(lastReceivedBid);
         double a = (FinalAccept - InitialAccept)/(t2 - t1);
         double b = InitialAccept -a * t1;
@@ -131,7 +131,7 @@ public class Group11 extends AbstractNegotiationParty {
         BidDetails lastBid = new BidDetails(lastReceivedBid, lastBidOwnUtility, time);
         double opponentBid = lastBid.getMyUndiscountedUtil();
 
-      
+
         if (time <= t1) {
             utilAccept = InitialAccept;
         } else if (time >= t1 && time < t2) {
